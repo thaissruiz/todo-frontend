@@ -1,78 +1,68 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-const API_URL = "https://todo-api-givw.onrender.com";
+const API_URL = "https://todo-api-givw.onrender.com/api/todos"; // URL correta da API
 
 function App() {
   const [todos, setTodos] = useState([]);
   const [text, setText] = useState('');
 
-  // Buscar tarefas da API
+  // Buscar tarefas da API ao carregar a página
   useEffect(() => {
-    fetch(`${API_URL}/todos`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Erro ao carregar as tarefas');
+    axios.get(API_URL)
+      .then(res => {
+        if (Array.isArray(res.data)) {
+          setTodos(res.data);
+        } else {
+          console.error("Resposta inesperada da API:", res.data);
+          setTodos([]);
         }
-        return response.json();
       })
-      .then(data => setTodos(data))
-      .catch(error => console.error('Erro:', error));
+      .catch(err => console.error("Erro ao buscar tarefas:", err));
   }, []);
 
-  // Adicionar tarefa
+  // Adicionar nova tarefa
   const addTodo = async () => {
     if (text.trim()) {
       try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ text }),
-        });
-        const newTodo = await response.json();
-        setTodos([...todos, newTodo]);
+        const res = await axios.post(API_URL, { text }); // Correção na URL
+        setTodos([...todos, res.data]);
         setText('');
-      } catch (error) {
-        console.error('Erro ao adicionar tarefa:', error);
+      } catch (err) {
+        console.error("Erro ao adicionar tarefa:", err);
       }
     }
   };
 
   // Alternar status de concluído
   const toggleComplete = async (id) => {
-    const todo = todos.find(t => t._id === id);
     try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ completed: !todo.completed }),
-      });
-      const updatedTodo = await response.json();
-      setTodos(todos.map(t => (t._id === id ? updatedTodo : t)));
-    } catch (error) {
-      console.error('Erro ao alternar tarefa:', error);
+      const todo = todos.find(t => t._id === id);
+      const res = await axios.put(`${API_URL}/${id}`, { completed: !todo.completed }); // Correção na URL
+      setTodos(todos.map(t => (t._id === id ? res.data : t)));
+    } catch (err) {
+      console.error("Erro ao atualizar tarefa:", err);
     }
   };
 
   // Remover tarefa
   const removeTodo = async (id) => {
     try {
-      await fetch(`${API_URL}/todos/${id}`, {
-        method: 'DELETE',
-      });
+      await axios.delete(`${API_URL}/${id}`); // Correção na URL
       setTodos(todos.filter(t => t._id !== id));
-    } catch (error) {
-      console.error('Erro ao remover tarefa:', error);
+    } catch (err) {
+      console.error("Erro ao remover tarefa:", err);
     }
   };
 
   return (
     <div className="App">
       <h1>Lista de Tarefas</h1>
-      <input value={text} onChange={e => setText(e.target.value)} placeholder="Nova tarefa" />
+      <input 
+        value={text} 
+        onChange={e => setText(e.target.value)} 
+        placeholder="Nova tarefa" 
+      />
       <button onClick={addTodo}>Adicionar</button>
       <ul>
         {todos.map(todo => (
