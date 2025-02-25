@@ -9,7 +9,8 @@ function App() {
 
   // Buscar tarefas da API
   useEffect(() => {
-    axios.get(API_URL).then(res => setTodos(res.data));
+   
+    axios.get(`${API_URL}/todos`).then(res => setTodos(res.data));
   }, []);
 
   // Adicionar tarefa
@@ -30,7 +31,7 @@ function App() {
 
   // Remover tarefa
   const removeTodo = async (id) => {
-    await axios.delete(`${API_URL}/${id}`);
+    await axios.delete(`${API_URL}/todos/${id}`);
     setTodos(todos.filter(t => t._id !== id));
   };
 
