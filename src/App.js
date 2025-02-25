@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 
 const API_URL = "https://todo-api-givw.onrender.com";
 
@@ -9,30 +8,65 @@ function App() {
 
   // Buscar tarefas da API
   useEffect(() => {
-   
-    axios.get(`${API_URL}/todos`).then(res => setTodos(res.data));
+    fetch(`${API_URL}/todos`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Erro ao carregar as tarefas');
+        }
+        return response.json();
+      })
+      .then(data => setTodos(data))
+      .catch(error => console.error('Erro:', error));
   }, []);
 
   // Adicionar tarefa
   const addTodo = async () => {
     if (text.trim()) {
-      const res = await axios.post(API_URL, { text });
-      setTodos([...todos, res.data]);
-      setText('');
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text }),
+        });
+        const newTodo = await response.json();
+        setTodos([...todos, newTodo]);
+        setText('');
+      } catch (error) {
+        console.error('Erro ao adicionar tarefa:', error);
+      }
     }
   };
 
   // Alternar status de concluído
   const toggleComplete = async (id) => {
     const todo = todos.find(t => t._id === id);
-    const res = await axios.put(`${API_URL}/${id}`, { completed: !todo.completed });
-    setTodos(todos.map(t => (t._id === id ? res.data : t)));
+    try {
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ completed: !todo.completed }),
+      });
+      const updatedTodo = await response.json();
+      setTodos(todos.map(t => (t._id === id ? updatedTodo : t)));
+    } catch (error) {
+      console.error('Erro ao alternar tarefa:', error);
+    }
   };
 
   // Remover tarefa
   const removeTodo = async (id) => {
-    await axios.delete(`${API_URL}/todos/${id}`);
-    setTodos(todos.filter(t => t._id !== id));
+    try {
+      await fetch(`${API_URL}/todos/${id}`, {
+        method: 'DELETE',
+      });
+      setTodos(todos.filter(t => t._id !== id));
+    } catch (error) {
+      console.error('Erro ao remover tarefa:', error);
+    }
   };
 
   return (
